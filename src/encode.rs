@@ -1,0 +1,1 @@
+//Use iterators for both input and output
