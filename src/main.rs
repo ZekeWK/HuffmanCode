@@ -1,50 +1,40 @@
-mod key_creator;
+mod key;
 mod encode;
 mod decode;
 
 fn main() {
-    println!("Hello, world!");
+
 }
-
-
-
-
-
 
 #[cfg(test)]
 mod tests {
-    use std::ops::Index;
+    use crate::{encode::*, decode::*, key::*};
 
-    use crate::key_creator;
-
-    use super::{encode::*, decode::*, key_creator::*};
     #[test]
     fn sherlock() {
-        let sherlock = "I have the advantage of knowing your habits, my dear Watson, said he. When your round is a short one you walk, and when it is a long one you use a hansom. As I perceive that your boots, although used, are by no means dirty, I cannot doubt that you are at present busy enough to justify the hansom.
+        let sherlock = "You will not apply my precept,\" he said, shaking his head. \"How often have I said to you that when you have eliminated the impossible, whatever remains, however improbable, must be the truth? We know that he did not come through the door, the window, or the chimney. We also know that he could not have been concealed in the room, as there is no concealment possible. When, then, did he come?";
+        let byte_iter = sherlock.as_bytes().into_iter().map(|x| *x);
 
-        Excellent! I cried.
-        
-        Elementary, said he. It is one of those instances where the reasoner can produce an effect which seems remarkable to his neighbour, because the latter has missed the one little point which is the basis of the deduction. The same may be said, my dear fellow, for the effect of some of these little sketches of yours, which is entirely meretricious, depending as it does upon your retaining in your own hands some factors in the problem which are never imparted to the reader.";
-    
-        let mut bytes : Vec<u8> = sherlock.as_bytes().into_iter().map(|x|*x).collect();
+        let byte_disposition = byte_disposition(byte_iter.clone());
+        let key = Key::new(byte_disposition);
 
-        let byte_disposition = byte_disposition(bytes.iter().map(|x| *x));
-        let key = key_creator(byte_disposition);
+        let mut encoded : Vec<bool> = byte_iter.rev().encode(&key).collect(); encoded.reverse();
 
-        bytes.reverse();
+        let decoded_bytes : Vec<u8> = encoded.clone().into_iter().decode(&key).collect();
 
-        let mut encoded : Vec<bool> = key.encode_rev(bytes.into_iter()).collect();
-        encoded.reverse();
+        let decoded : String = decoded_bytes.into_iter().map(|x| x as char).collect();
+        println!("Original : {}, Encoded : {}", sherlock.len()*8, encoded.len());
+        assert_eq!(sherlock, decoded)
 
-        let encoded_len = encoded.len();
+    }
 
-        let decoded : Vec<u8> = key.decode(encoded.into_iter()).collect();
+    #[test]
+    fn all_chars() {
+        let key = Key::new([0;256]);
 
-        let decoded_string : String = decoded.iter().map(|&x| x as char).collect();
-
-        println!("OG : {}, COMP : {}", sherlock.len()*8, encoded_len);
-
-        assert_eq!(sherlock.to_string(), decoded_string);
-    
+        for byte in 0..=255u8 {
+            let encoded : Vec<bool> = [byte].into_iter().map(|x|*x).encode(&key).collect();
+            println!("Byte : {}, Encoded : {:?}", byte, encoded);
+        }
     }
 }
